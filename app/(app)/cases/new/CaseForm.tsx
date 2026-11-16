@@ -64,11 +64,11 @@ export default function CaseForm({ target, client, personName, initialEmail, def
           </div>
           <Field
             label="Client email"
-            htmlFor="email"
+            htmlFor="case_email"
             error={e.email ?? (showFormatError ? 'Enter a valid email address, like name@example.com.' : undefined)}
           >
             <input
-              id="email"
+              id="case_email"
               name="email"
               type="email"
               autoComplete="off"
@@ -107,8 +107,8 @@ export default function CaseForm({ target, client, personName, initialEmail, def
         </div>
       )}
 
-      <Field label="Type of case" htmlFor="service" error={e.service}>
-        <select id="service" name="service" required defaultValue={v.service ?? defaultService} className={inputClass}>
+      <Field label="Type of case" htmlFor="case_service" error={e.service}>
+        <select id="case_service" name="service" required defaultValue={v.service ?? defaultService} className={inputClass}>
           <option value="" disabled>Select…</option>
           {Object.entries(SERVICES).map(([k, text]) => (
             <option key={k} value={k}>{text}</option>
@@ -116,8 +116,8 @@ export default function CaseForm({ target, client, personName, initialEmail, def
         </select>
       </Field>
 
-      <Field label="Notes" htmlFor="notes" optional>
-        <textarea id="notes" name="notes" rows={3} defaultValue={v.notes} className={inputClass} />
+      <Field label="Notes" htmlFor="case_notes" optional>
+        <textarea id="case_notes" name="notes" rows={3} defaultValue={v.notes} className={inputClass} />
       </Field>
 
       <div className="flex flex-wrap items-center justify-end gap-4">

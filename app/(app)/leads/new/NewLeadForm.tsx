@@ -27,25 +27,25 @@ export default function NewLeadForm({
 
       <Card title="Who is asking?">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Full name" htmlFor="name" error={e.name}>
-            <input id="name" name="name" required autoFocus autoComplete="off" defaultValue={v.name} className={inputClass} />
+          <Field label="Full name" htmlFor="lead_name" error={e.name}>
+            <input id="lead_name" name="name" required autoFocus autoComplete="off" defaultValue={v.name} className={inputClass} />
           </Field>
-          <Field label="Phone / WhatsApp" htmlFor="phone" error={e.phone}>
-            <input id="phone" name="phone" type="tel" autoComplete="off" defaultValue={v.phone} className={inputClass} placeholder="+234 800 000 0000" />
+          <Field label="Phone / WhatsApp" htmlFor="lead_phone" error={e.phone}>
+            <input id="lead_phone" name="phone" type="tel" autoComplete="off" defaultValue={v.phone} className={inputClass} placeholder="+234 800 000 0000" />
           </Field>
-          <Field label="Email" htmlFor="email" error={e.email} optional hint="Not needed to log an inquiry — it is required before a case can be opened.">
-            <input id="email" name="email" type="email" autoComplete="off" defaultValue={v.email} className={inputClass} placeholder="name@example.com" />
+          <Field label="Email" htmlFor="lead_email" error={e.email} optional hint="Not needed to log an inquiry — it is required before a case can be opened.">
+            <input id="lead_email" name="email" type="email" autoComplete="off" defaultValue={v.email} className={inputClass} placeholder="name@example.com" />
           </Field>
-          <Field label="How did they reach us?" htmlFor="source" error={e.source}>
-            <select id="source" name="source" required defaultValue={v.source ?? ''} className={inputClass}>
+          <Field label="How did they reach us?" htmlFor="lead_source" error={e.source}>
+            <select id="lead_source" name="source" required defaultValue={v.source ?? ''} className={inputClass}>
               <option value="" disabled>Select…</option>
               {Object.entries(SOURCES).filter(([k]) => k !== 'website').map(([k, text]) => (
                 <option key={k} value={k}>{text}</option>
               ))}
             </select>
           </Field>
-          <Field label="Interested in" htmlFor="service" error={e.service} optional>
-            <select id="service" name="service" defaultValue={v.service ?? ''} className={inputClass}>
+          <Field label="Interested in" htmlFor="lead_service" error={e.service} optional>
+            <select id="lead_service" name="service" defaultValue={v.service ?? ''} className={inputClass}>
               <option value="">Not sure yet</option>
               {Object.entries(SERVICES).map(([k, text]) => (
                 <option key={k} value={k}>{text}</option>
@@ -53,8 +53,8 @@ export default function NewLeadForm({
             </select>
           </Field>
           <div className="sm:col-span-2">
-            <Field label="What they said" htmlFor="message" optional>
-              <textarea id="message" name="message" rows={2} defaultValue={v.message} className={inputClass} />
+            <Field label="What they said" htmlFor="lead_message" optional>
+              <textarea id="lead_message" name="message" rows={2} defaultValue={v.message} className={inputClass} />
             </Field>
           </div>
         </div>

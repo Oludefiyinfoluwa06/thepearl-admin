@@ -74,6 +74,7 @@ export type EventDoc = {
   _id: ObjectId;
   clientId: ObjectId | null;
   leadId: ObjectId | null;
+  caseId?: ObjectId | null;
   type: string;
   summary: string;
   actorName: string | null;
@@ -147,6 +148,7 @@ async function setup(s: Store) {
     s.cases.createIndex({ clientId: 1 }),
     s.events.createIndex({ clientId: 1, createdAt: -1 }),
     s.events.createIndex({ leadId: 1, createdAt: -1 }),
+    s.events.createIndex({ caseId: 1, createdAt: -1 }),
   ]);
 
   // First run only: create the owner from env so no default password ever ships.

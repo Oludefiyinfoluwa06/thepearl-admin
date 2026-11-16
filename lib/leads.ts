@@ -1,7 +1,7 @@
 import 'server-only';
 import { ObjectId, type ClientSession, type Filter } from 'mongodb';
 import { getStore, toId, type EventDoc, type LeadDoc } from './db';
-import { LEAD_STATUSES, OUTCOMES, SOURCES, label, type Outcome } from './constants';
+import { CASE_DONE, LEAD_STATUSES, OUTCOMES, PAGE_SIZE, SOURCES, label, type Outcome } from './constants';
 import { todayLagos } from './format';
 import { findActiveUserName } from './users';
 
@@ -61,12 +61,12 @@ export function toLead(d: LeadDoc): Lead {
 }
 
 export async function logEvent(
-  e: { clientId?: ObjectId | null; leadId?: ObjectId | null; type: string; summary: string; actor: Actor },
+  e: { clientId?: ObjectId | null; leadId?: ObjectId | null; caseId?: ObjectId | null; type: string; summary: string; actor: Actor },
   session?: ClientSession,
 ) {
   const { events } = await getStore();
   await events.insertOne(
-    { _id: new ObjectId(), clientId: e.clientId ?? null, leadId: e.leadId ?? null, type: e.type, summary: e.summary, actorName: e.actor?.name ?? null, createdAt: new Date() },
+    { _id: new ObjectId(), clientId: e.clientId ?? null, leadId: e.leadId ?? null, caseId: e.caseId ?? null, type: e.type, summary: e.summary, actorName: e.actor?.name ?? null, createdAt: new Date() },
     { session },
   );
 }
@@ -184,18 +184,21 @@ export function searchFilter(q: string, fields: { name: string; email: string; p
   return { $or: or } as Filter<never>;
 }
 
-export async function listLeads(filters: { q?: string; status?: string; source?: string }): Promise<Lead[]> {
+export async function listLeads(filters: { q?: string; status?: string; source?: string; page?: number; pageSize?: number }): Promise<{ items: Lead[]; total: number }> {
   const and: Filter<LeadDoc>[] = [];
   const s = searchFilter(filters.q ?? '', { name: 'name', email: 'email', phone: 'phoneDigits' });
   if (s) and.push(s as Filter<LeadDoc>);
   if (filters.status && filters.status in LEAD_STATUSES) and.push({ status: filters.status });
   if (filters.source && filters.source in SOURCES) and.push({ source: filters.source });
-  const docs = await (await getStore()).leads
-    .find(and.length ? { $and: and } : {})
-    .sort({ createdAt: -1, _id: -1 })
-    .limit(200)
-    .toArray();
-  return docs.map(toLead);
+  const { leads } = await getStore();
+  const filter = and.length ? { $and: and } : {};
+  const size = filters.pageSize ?? PAGE_SIZE;
+  const skip = (Math.max(1, filters.page ?? 1) - 1) * size;
+  const [docs, total] = await Promise.all([
+    leads.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(size).toArray(),
+    leads.countDocuments(filter),
+  ]);
+  return { items: docs.map(toLead), total };
 }
 
 export async function dashboardStats() {
@@ -205,7 +208,7 @@ export async function dashboardStats() {
     leads.countDocuments({ status: 'new' }),
     leads.countDocuments({ status: 'follow_up_later', followUpOn: { $ne: null, $lte: today } }),
     leads.countDocuments({ status: 'moved_to_assessment', clientId: null }),
-    cases.countDocuments({ status: 'open' }),
+    cases.countDocuments({ status: { $nin: [...CASE_DONE] } }),
   ]);
   return { newLeads, followUpsDue, awaitingCase, openCases };
 }
@@ -217,4 +220,17 @@ export async function followUpsDue(limit = 8) {
     .limit(limit)
     .toArray();
   return docs.map((l) => ({ id: l._id.toString(), name: l.name, phone: l.phone, follow_up_on: l.followUpOn as string }));
+}
+
+/** Removes an inquiry and its consultations/history. Refused for people who already became clients. */
+export async function deleteLead(id: string): Promise<'deleted' | 'is-client' | 'not-found'> {
+  const _id = toId(id);
+  if (!_id) return 'not-found';
+  const { leads, consultations, events } = await getStore();
+  const lead = await leads.findOne({ _id });
+  if (!lead) return 'not-found';
+  if (lead.clientId) return 'is-client';
+  await Promise.all([consultations.deleteMany({ leadId: _id }), events.deleteMany({ leadId: _id })]);
+  await leads.deleteOne({ _id });
+  return 'deleted';
 }

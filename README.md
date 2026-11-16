@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The Pearl Travel and Tours: admin dashboard
 
-## Getting Started
+Internal dashboard for the team: sign in with roles (owner, staff), capture and track inquiries, log free
+consultations, keep client profiles with a timeline, and open cases.
 
-First, run the development server:
+Built with Next.js (App Router, Cache Components), Tailwind, and MongoDB Atlas. Branding matches the public
+website (`../tptt`).
+
+## Run it locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # then fill it in
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+On first start the owner account is created from `ADMIN_SEED_EMAIL` / `ADMIN_SEED_PASSWORD`. After that, owners
+invite team members from **Team**: they get an email and choose their own password. "Forgot your password?" on the
+sign-in page sends a one-hour reset link.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI`, `MONGODB_DB` | Atlas connection string and database name |
+| `ADMIN_SEED_*` | First owner (used only while there are no users) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Outgoing email (invitations, resets) |
+| `APP_URL` | Public URL used in emailed links (falls back to the request host) |
+| `INTAKE_API_KEY` | Shared secret the website sends to `POST /api/intake/website` |
+| `DNS_SERVERS` | Optional, e.g. `8.8.8.8,1.1.1.1`. Only if `mongodb+srv` lookups fail on your network |
 
-## Learn More
+If SMTP is not configured, inviting someone still works: the app shows the invitation link so you can share it by hand.
 
-To learn more about Next.js, take a look at the following resources:
+### Website → dashboard
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The website's contact form (`tptt`) posts each enquiry to `POST /api/intake/website` with the header
+`x-intake-key: <INTAKE_API_KEY>`. Set `ADMIN_INTAKE_URL` and `ADMIN_INTAKE_KEY` in the website's environment.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Rules worth knowing
 
-## Deploy on Vercel
+- A lead can be logged without an email. A **case cannot be opened** until the client has a valid email; the case
+  screen asks for it, checks the format, and warns if another client already uses it. This is enforced in
+  `lib/clients.ts` and again by a MongoDB validator on the `clients` collection.
+- One client can have many cases. Each case has a status and a note history.
+- Owners can delete an inquiry that never became a client; clients are never deleted.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tests
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+End-to-end tests (Playwright) run the real app against a throwaway database, `tptt-admin-e2e`, which is wiped at the
+start of each run, with a fake SMTP server to capture emails. They use your installed Chrome.
+
+```bash
+npm run test:e2e
+```
+
+They need `MONGODB_URI` (from `.env.local`). They refuse to touch any database that is not the `-e2e` one.
+
+## Branches
+
+`master` is production, `develop` is test; work happens on feature branches merged into `develop`.

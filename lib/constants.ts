@@ -31,6 +31,19 @@ export const LEAD_STATUSES = {
   ...OUTCOMES,
 } as const;
 
+export const CASE_STATUSES = {
+  open: 'Open',
+  in_progress: 'In progress',
+  awaiting_client: 'Awaiting client',
+  completed: 'Completed',
+  closed: 'Closed',
+} as const;
+
+/** Statuses that count as finished work (excluded from "open cases"). */
+export const CASE_DONE = ['completed', 'closed'] as const;
+
+export const PAGE_SIZE = 25;
+
 export type Source = keyof typeof SOURCES;
 export type Outcome = keyof typeof OUTCOMES;
 export type Role = 'owner' | 'staff';

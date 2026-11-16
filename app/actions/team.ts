@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth';
 import { inviteUser } from '@/lib/account-emails';
-import { createUser, emailTaken, findUserById, setUserActive } from '@/lib/users';
+import { createUser, emailTaken, findUserById, setUserActive, setUserRole } from '@/lib/users';
 import { isValidEmail } from '@/lib/validation';
 import { str, type FormState } from './shared';
 
@@ -41,5 +41,12 @@ export async function setUserActiveAction(userId: string, active: boolean) {
   const owner = await requireOwner();
   if (userId === owner.id) return; // owners can't lock themselves out
   await setUserActive(userId, active); // refuses to deactivate the last active owner
+  revalidatePath('/team');
+}
+
+export async function setUserRoleAction(userId: string, data: FormData) {
+  const owner = await requireOwner();
+  if (userId === owner.id) return; // change your own role by asking another owner
+  await setUserRole(userId, str(data, 'role') === 'owner' ? 'owner' : 'staff');
   revalidatePath('/team');
 }

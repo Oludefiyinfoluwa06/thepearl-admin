@@ -7,8 +7,8 @@ import { Badge, Card, Empty, PageHeader } from '@/components/ui';
 
 export default async function Dashboard() {
   const user = await requireUser();
-  const [stats, due, allRecent] = await Promise.all([dashboardStats(), followUpsDue(), listLeads({})]);
-  const recent = allRecent.slice(0, 8);
+  const [stats, due, allRecent] = await Promise.all([dashboardStats(), followUpsDue(), listLeads({ pageSize: 8 })]);
+  const recent = allRecent.items;
 
   const tiles = [
     { label: 'New inquiries', value: stats.newLeads, href: '/leads?status=new' },

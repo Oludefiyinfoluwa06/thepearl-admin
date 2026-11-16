@@ -4,25 +4,28 @@ import { requireUser } from '@/lib/auth';
 import { listLeads } from '@/lib/leads';
 import { LEAD_STATUSES, SOURCES, label } from '@/lib/constants';
 import { formatDateTime } from '@/lib/format';
-import { Badge, Card, Empty, PageHeader, btnGhost, btnPrimary, inputClass } from '@/components/ui';
+import Pagination from '@/components/Pagination';
+import { Badge, Card, Empty, Notice, PageHeader, btnGhost, btnPrimary, inputClass } from '@/components/ui';
 
 export const metadata = { title: 'Inquiries — The Pearl Admin' };
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireUser();
   const sp = await searchParams;
+  const deleted = Boolean(sp.deleted);
   const one = (k: string) => (typeof sp[k] === 'string' ? (sp[k] as string) : '');
   const q = one('q');
   const status = one('status');
   const source = one('source');
-  const leads = await listLeads({ q, status, source });
+  const page = Math.max(1, Number(one('page')) || 1);
+  const { items: leads, total } = await listLeads({ q, status, source, page });
   const filtered = Boolean(q || status || source);
 
   return (
     <>
       <PageHeader
         title="Inquiries"
-        subtitle={`${leads.length}${leads.length === 200 ? '+' : ''} ${filtered ? 'matching' : 'total'}`}
+        subtitle={`${total} ${filtered ? 'matching' : 'total'}`}
         actions={
           <Link href="/leads/new" className={btnPrimary}>
             <Plus className="h-4 w-4" aria-hidden /> New inquiry
@@ -30,6 +33,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         }
       />
 
+      {deleted && <div className="mb-4"><Notice tone="success">Inquiry deleted.</Notice></div>}
       <form className="flex flex-wrap gap-3 mb-4">
         <input name="q" type="search" defaultValue={q} placeholder="Name, phone or email" aria-label="Search" className={`${inputClass} sm:w-72`} />
         <select name="status" defaultValue={status} aria-label="Status" className={`${inputClass} sm:w-52`}>
@@ -84,6 +88,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </div>
         )}
       </Card>
+      <Pagination page={page} total={total} path="/leads" params={{ q, status, source }} />
     </>
   );
 }

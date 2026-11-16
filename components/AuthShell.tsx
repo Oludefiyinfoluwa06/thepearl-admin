@@ -6,7 +6,7 @@ export default function AuthShell({ title, children }: { title: string; children
     <main className="flex-1 flex items-center justify-center bg-navy-dark px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <Image src="/logo.png" alt="" width={48} height={48} className="h-12 w-auto rounded-sm" />
+          <Image src="/logo.png" alt="" width={48} height={48} className="h-12 w-12 object-contain rounded-sm" />
           <div className="leading-tight">
             <p className="font-serif text-2xl font-black text-white">The Pearl</p>
             <p className="text-xs font-semibold tracking-[0.25em] uppercase text-gold">Admin Dashboard</p>

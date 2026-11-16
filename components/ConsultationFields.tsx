@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { OUTCOMES } from '@/lib/constants';
 import { Field, inputClass } from './ui';
 
@@ -15,14 +15,15 @@ type Props = {
 /** Date, handler, notes, outcome (+ follow-up date). Shared by "new inquiry" and "add consultation". */
 export default function ConsultationFields({ users, defaultHeldAt, defaultHandler, errors = {}, values = {} }: Props) {
   const [outcome, setOutcome] = useState(values.outcome ?? '');
+  const uid = useId();
   return (
     <div className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Date & time" htmlFor="held_at" error={errors.held_at} hint="West Africa Time">
-          <input id="held_at" name="held_at" type="datetime-local" required defaultValue={values.held_at ?? defaultHeldAt} className={inputClass} />
+        <Field label="Date & time" htmlFor={`${uid}held_at`} error={errors.held_at} hint="West Africa Time">
+          <input id={`${uid}held_at`} name="held_at" type="datetime-local" required defaultValue={values.held_at ?? defaultHeldAt} className={inputClass} />
         </Field>
-        <Field label="Handled by" htmlFor="handled_by" error={errors.handled_by}>
-          <select id="handled_by" name="handled_by" defaultValue={values.handled_by ?? defaultHandler} className={inputClass}>
+        <Field label="Handled by" htmlFor={`${uid}handled_by`} error={errors.handled_by}>
+          <select id={`${uid}handled_by`} name="handled_by" defaultValue={values.handled_by ?? defaultHandler} className={inputClass}>
             {users.map((u) => (
               <option key={u.id} value={u.id}>{u.name}</option>
             ))}
@@ -30,8 +31,8 @@ export default function ConsultationFields({ users, defaultHeldAt, defaultHandle
         </Field>
       </div>
 
-      <Field label="Notes" htmlFor="notes" optional>
-        <textarea id="notes" name="notes" rows={3} defaultValue={values.notes} className={inputClass} placeholder="What did they want, what was advised…" />
+      <Field label="Notes" htmlFor={`${uid}notes`} optional>
+        <textarea id={`${uid}notes`} name="notes" rows={3} defaultValue={values.notes} className={inputClass} placeholder="What did they want, what was advised…" />
       </Field>
 
       <fieldset>
@@ -61,8 +62,8 @@ export default function ConsultationFields({ users, defaultHeldAt, defaultHandle
       </fieldset>
 
       {outcome === 'follow_up_later' && (
-        <Field label="Follow up on" htmlFor="follow_up_on" error={errors.follow_up_on} optional>
-          <input id="follow_up_on" name="follow_up_on" type="date" defaultValue={values.follow_up_on} className={`${inputClass} sm:max-w-56`} />
+        <Field label="Follow up on" htmlFor={`${uid}follow_up_on`} error={errors.follow_up_on} optional>
+          <input id={`${uid}follow_up_on`} name="follow_up_on" type="date" defaultValue={values.follow_up_on} className={`${inputClass} sm:max-w-56`} />
         </Field>
       )}
     </div>
