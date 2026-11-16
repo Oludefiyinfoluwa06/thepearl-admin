@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation';
 import { Briefcase, Mail, Phone } from 'lucide-react';
 import { requireUser } from '@/lib/auth';
 import { clientCases, clientLeads, clientTimeline, getClient } from '@/lib/clients';
-import { LEAD_STATUSES, SERVICES, SOURCES, label } from '@/lib/constants';
+import { CASE_STATUSES, LEAD_STATUSES, SERVICES, SOURCES, label } from '@/lib/constants';
 import { formatDate, formatDateTime } from '@/lib/format';
 import { Badge, Card, Empty, Notice, PageHeader, btnGold } from '@/components/ui';
 import Timeline from '@/components/Timeline';
+import EditClientForm from './EditClientForm';
 
 export default async function ClientPage({
   params,
@@ -34,7 +35,7 @@ export default async function ClientPage({
           </Link>
         }
       />
-      {sp.case && <div className="mb-6"><Notice tone="success">Case opened.</Notice></div>}
+      {(sp.case || sp.saved) && <div className="mb-6"><Notice tone="success">{sp.case ? 'Case opened.' : 'Saved.'}</Notice></div>}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -46,8 +47,8 @@ export default async function ClientPage({
                 {cases.map((c) => (
                   <li key={c.id} className="py-3 text-sm">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-bold text-navy">{label(SERVICES, c.service)}</span>
-                      <Badge kind={c.status}>{c.status === 'open' ? 'Open' : c.status}</Badge>
+                      <Link href={`/cases/${c.id}`} className="font-bold text-navy hover:text-gold">{label(SERVICES, c.service)}</Link>
+                      <Badge kind={c.status}>{label(CASE_STATUSES, c.status)}</Badge>
                       <span className="text-xs text-gray-500">Opened {formatDateTime(c.opened_at)} by {c.opened_by_name}</span>
                     </div>
                     {c.notes && <p className="mt-1 text-gray-700 whitespace-pre-wrap">{c.notes}</p>}
@@ -67,6 +68,12 @@ export default async function ClientPage({
               <li className="flex items-center gap-2 break-all"><Mail className="h-4 w-4 text-gold shrink-0" aria-hidden />{client.email}</li>
               <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-gold shrink-0" aria-hidden />{client.phone ?? '—'}</li>
             </ul>
+            <details className="border-t border-gray-100 mt-4 pt-4">
+              <summary className="cursor-pointer text-xs font-bold tracking-[0.12em] uppercase text-gold hover:text-navy list-none">Edit contact details</summary>
+              <div className="mt-4">
+                <EditClientForm clientId={client.id} client={{ name: client.full_name, email: client.email, phone: client.phone }} />
+              </div>
+            </details>
           </Card>
           <Card title="Original inquiries">
             {leads.length === 0 ? (

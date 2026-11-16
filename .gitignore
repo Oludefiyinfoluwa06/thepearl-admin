@@ -44,3 +44,8 @@ next-env.d.ts
 /data
 
 !.env.example
+
+# e2e artifacts
+/e2e/.mail
+/test-results
+/playwright-report

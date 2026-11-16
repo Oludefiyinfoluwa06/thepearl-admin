@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { findClientsByEmail, openCase } from '@/lib/clients';
+import { addCaseNote, updateCaseStatus } from '@/lib/cases';
 import { isValidEmail } from '@/lib/validation';
 import { str, values, type FormState } from './shared';
 
@@ -48,4 +49,16 @@ export async function openCaseAction(
     };
   }
   redirect(`/clients/${result.clientId}?case=${result.caseId}`);
+}
+
+export async function updateCaseStatusAction(caseId: string, data: FormData) {
+  const user = await requireUser();
+  await updateCaseStatus(caseId, str(data, 'status'), user);
+  redirect(`/cases/${caseId}`);
+}
+
+export async function addCaseNoteAction(caseId: string, data: FormData) {
+  const user = await requireUser();
+  await addCaseNote(caseId, str(data, 'note', 5000), user);
+  redirect(`/cases/${caseId}`);
 }

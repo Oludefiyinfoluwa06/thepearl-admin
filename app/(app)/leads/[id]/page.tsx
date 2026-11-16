@@ -9,6 +9,7 @@ import { formatDate, formatDateTime, nowForInput } from '@/lib/format';
 import { Badge, Card, Empty, Notice, PageHeader, btnGold } from '@/components/ui';
 import Timeline from '@/components/Timeline';
 import { AddConsultationForm, EditContactForm } from './LeadForms';
+import DeleteLead from './DeleteLead';
 
 export default async function LeadPage({
   params,
@@ -46,6 +47,7 @@ export default async function LeadPage({
       <div className="space-y-4 mb-6">
         {sp.created && <Notice tone="success">Inquiry saved. You can find it again any time under Inquiries.</Notice>}
         {sp.saved && <Notice tone="success">Saved.</Notice>}
+        {sp['cannot-delete'] && <Notice tone="error">This person is already a client, so the inquiry cannot be deleted.</Notice>}
         {ready && !lead.client_id && (
           <Notice tone="warn">
             Moved to assessment — next step is to <Link className="font-bold underline" href={`/cases/new?lead=${lead.id}`}>open a case</Link>.
@@ -108,6 +110,11 @@ export default async function LeadPage({
                 <EditContactForm leadId={lead.id} lead={lead} emailRequired={Boolean(lead.client_id)} />
               </div>
             </details>
+            {user.role === 'owner' && !lead.client_id && (
+              <div className="border-t border-gray-100 mt-4 pt-4">
+                <DeleteLead leadId={lead.id} name={lead.name} />
+              </div>
+            )}
           </Card>
         </div>
       </div>

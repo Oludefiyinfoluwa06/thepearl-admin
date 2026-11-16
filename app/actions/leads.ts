@@ -1,10 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/lib/auth';
+import { requireOwner, requireUser } from '@/lib/auth';
 import { findActiveUserName } from '@/lib/users';
 import { OUTCOMES, SERVICES, SOURCES, type Outcome } from '@/lib/constants';
-import { addConsultation, createLead, getLead, updateLeadContact } from '@/lib/leads';
+import { addConsultation, createLead, deleteLead, getLead, updateLeadContact } from '@/lib/leads';
 import { inputToIso } from '@/lib/format';
 import { isValidEmail, normalizeEmail } from '@/lib/validation';
 import { str, values, type FormState } from './shared';
@@ -102,4 +102,10 @@ export async function updateLeadContactAction(leadId: string, _: FormState, data
 
   await updateLeadContact(leadId, { name, phone, email: emailRaw ? normalizeEmail(emailRaw) : null }, user);
   redirect(`/leads/${leadId}?saved=1`);
+}
+
+export async function deleteLeadAction(leadId: string) {
+  await requireOwner();
+  const result = await deleteLead(leadId);
+  redirect(result === 'is-client' ? `/leads/${leadId}?cannot-delete=1` : '/leads?deleted=1');
 }

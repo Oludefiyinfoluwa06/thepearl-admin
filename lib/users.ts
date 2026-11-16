@@ -67,3 +67,16 @@ export async function findActiveUserName(userId: string) {
   const u = await (await getStore()).users.findOne({ _id: id, active: true });
   return u?.name ?? null;
 }
+
+/** Returns false if refused: the change would leave no active owner. */
+export async function setUserRole(userId: string, role: Role) {
+  const id = toId(userId);
+  if (!id) return false;
+  const { users } = await getStore();
+  if (role !== 'owner') {
+    const otherOwners = await users.countDocuments({ role: 'owner', active: true, _id: { $ne: id } });
+    if (otherOwners === 0) return false;
+  }
+  await users.updateOne({ _id: id }, { $set: { role } });
+  return true;
+}

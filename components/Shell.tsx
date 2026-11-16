@@ -22,7 +22,7 @@ export default async function Shell({ children }: { children: React.ReactNode })
         <div className="hidden md:block h-0.5 bg-linear-to-r from-gold via-gold-light to-gold absolute inset-x-0 top-0" />
         <div className="flex md:flex-col flex-1 gap-3 md:gap-0 p-3 md:p-5 items-center md:items-stretch overflow-x-auto">
           <Link href="/" className="flex items-center gap-2.5 md:mb-6 shrink-0">
-            <Image src="/logo.png" alt="" width={36} height={36} className="h-9 w-auto rounded-sm" />
+            <Image src="/logo.png" alt="" width={36} height={36} className="h-9 w-9 object-contain rounded-sm" />
             <div className="leading-tight">
               <p className="font-serif text-lg font-black text-white">The Pearl</p>
               <p className="hidden md:block text-[10px] font-semibold tracking-[0.25em] uppercase text-gold">Admin</p>

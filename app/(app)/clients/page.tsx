@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { listClients } from '@/lib/clients';
 import { formatDate } from '@/lib/format';
+import Pagination from '@/components/Pagination';
 import { Card, Empty, PageHeader, btnGhost, btnPrimary, inputClass } from '@/components/ui';
 
 export const metadata = { title: 'Clients — The Pearl Admin' };
@@ -10,7 +11,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   await requireUser();
   const sp = await searchParams;
   const q = typeof sp.q === 'string' ? sp.q : '';
-  const clients = await listClients(q);
+  const page = Math.max(1, Number(typeof sp.page === 'string' ? sp.page : '1') || 1);
+  const { items: clients, total } = await listClients(q, page);
 
   return (
     <>
@@ -50,6 +52,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
           </div>
         )}
       </Card>
+      <Pagination page={page} total={total} path="/clients" params={{ q }} />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import 'server-only';
 import { ObjectId, type Filter } from 'mongodb';
 import { getStore, toId, type ClientDoc } from './db';
-import { SERVICES, label } from './constants';
+import { PAGE_SIZE, SERVICES, label } from './constants';
 import { isValidEmail, normalizeEmail } from './validation';
 import { logEvent, searchFilter, toEvent, type Actor, type TimelineEvent } from './leads';
 
@@ -28,15 +28,18 @@ export async function getClient(id: string): Promise<Client | undefined> {
   return doc ? toClient(doc) : undefined;
 }
 
-export async function listClients(q?: string) {
+export async function listClients(q?: string, page = 1) {
   const { clients, cases } = await getStore();
   const filter = (searchFilter(q ?? '', { name: 'fullName', email: 'email', phone: 'phoneDigits' }) ?? {}) as Filter<ClientDoc>;
-  const docs = await clients.find(filter).sort({ createdAt: -1, _id: -1 }).limit(200).toArray();
+  const [docs, total] = await Promise.all([
+    clients.find(filter).sort({ createdAt: -1, _id: -1 }).skip((Math.max(1, page) - 1) * PAGE_SIZE).limit(PAGE_SIZE).toArray(),
+    clients.countDocuments(filter),
+  ]);
   const counts = await cases
     .aggregate<{ _id: ObjectId; n: number }>([{ $match: { clientId: { $in: docs.map((d) => d._id) } } }, { $group: { _id: '$clientId', n: { $sum: 1 } } }])
     .toArray();
   const byClient = new Map(counts.map((c) => [c._id.toString(), c.n]));
-  return docs.map((d) => ({ ...toClient(d), case_count: byClient.get(d._id.toString()) ?? 0 }));
+  return { items: docs.map((d) => ({ ...toClient(d), case_count: byClient.get(d._id.toString()) ?? 0 })), total };
 }
 
 export async function clientCases(clientId: string): Promise<Case[]> {
@@ -152,10 +155,34 @@ export async function openCase(input: OpenCaseInput, actor: NonNullable<Actor>):
         { _id: caseId, clientId: clientId!, leadId: lead?._id ?? null, service: input.service, notes: input.notes, status: 'open', openedBy: new ObjectId(actor.id), openedByName: actor.name, openedAt: new Date() },
         { session },
       );
-      await logEvent({ clientId, leadId: lead?._id ?? null, type: 'case_opened', summary: `Case opened: ${label(SERVICES, input.service)}`, actor }, session);
+      await logEvent({ clientId, leadId: lead?._id ?? null, caseId, type: 'case_opened', summary: `Case opened: ${label(SERVICES, input.service)}`, actor }, session);
     });
   } finally {
     await session.endSession();
   }
   return { ok: true, clientId: clientId!.toString(), caseId: caseId.toString() };
+}
+
+export type UpdateClientResult = { ok: true } | { ok: false; field: 'name' | 'email'; error: string };
+
+/** Edits a client's contact details. The email rule applies here too: it must stay valid and unique. */
+export async function updateClient(id: string, input: { name: string; email: string; phone: string | null }, actor: NonNullable<Actor>): Promise<UpdateClientResult> {
+  const _id = toId(id);
+  if (!_id) return { ok: false, field: 'name', error: 'That client no longer exists.' };
+  if (!input.name.trim()) return { ok: false, field: 'name', error: 'Enter their name.' };
+  if (!isValidEmail(input.email)) return { ok: false, field: 'email', error: 'Enter a valid email address, like name@example.com.' };
+
+  const email = normalizeEmail(input.email);
+  const { clients } = await getStore();
+  const clash = await clients.findOne({ email, _id: { $ne: _id } });
+  if (clash) {
+    return { ok: false, field: 'email', error: `${clash.fullName} already uses this email. If it is the same person, open cases on that profile instead.` };
+  }
+  const res = await clients.updateOne(
+    { _id },
+    { $set: { fullName: input.name.trim(), email, phone: input.phone, phoneDigits: (input.phone ?? '').replace(/\D/g, '') } },
+  );
+  if (!res.matchedCount) return { ok: false, field: 'name', error: 'That client no longer exists.' };
+  await logEvent({ clientId: _id, type: 'client_updated', summary: 'Contact details updated', actor });
+  return { ok: true };
 }

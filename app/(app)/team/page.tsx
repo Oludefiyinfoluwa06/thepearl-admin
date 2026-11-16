@@ -1,6 +1,6 @@
 import { requireOwner } from '@/lib/auth';
 import { listMembers } from '@/lib/users';
-import { setUserActiveAction } from '@/app/actions/team';
+import { setUserActiveAction, setUserRoleAction } from '@/app/actions/team';
 import { formatDate } from '@/lib/format';
 import { Badge, Card, PageHeader, btnGhost } from '@/components/ui';
 import TeamForm from './TeamForm';
@@ -27,7 +27,17 @@ export default async function TeamPage() {
                     {m.invited && m.active && <p className="text-xs font-semibold text-amber-700">Invitation pending — no password set yet</p>}
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge kind={m.role === 'owner' ? 'moved_to_assessment' : 'new'}>{m.role === 'owner' ? 'Owner' : 'Staff'}</Badge>
+                    {m.id === me.id ? (
+                      <Badge kind="moved_to_assessment">Owner (you)</Badge>
+                    ) : (
+                      <form action={setUserRoleAction.bind(null, m.id)} className="flex items-center gap-1.5">
+                        <select name="role" defaultValue={m.role} aria-label={`Role for ${m.name}`} className="border border-gray-300 rounded-sm px-2 py-1.5 text-xs bg-white">
+                          <option value="staff">Staff</option>
+                          <option value="owner">Owner</option>
+                        </select>
+                        <button className={`${btnGhost} py-1.5!`}>Change</button>
+                      </form>
+                    )}
                     {m.invited && m.active && <ResendInvite userId={m.id} />}
                     {m.id !== me.id && (
                       <form action={setUserActiveAction.bind(null, m.id, !m.active)}>
